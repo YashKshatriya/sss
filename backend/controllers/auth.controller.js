@@ -1,5 +1,6 @@
 const User = require('../models/auth.model');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -43,11 +44,15 @@ const registerUser = async (req, res) => {
         });
       }
   
+      // Hash password
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+  
       // Create user
       const user = await User.create({
         name: name.trim(),
         number: number.trim(),
-        password
+        password: hashedPassword
       });
   
       // Generate token
@@ -168,8 +173,38 @@ const registerUser = async (req, res) => {
     }
   };
   
+  // Logout user
+  const logout = async (req, res) => {
+    try {
+      // User is already available from auth middleware
+      const user = req.user;
+
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Not authenticated'
+        });
+      }
+
+      // Clear any user-specific data if needed
+      // For example, you might want to clear refresh tokens or session data here
+
+      res.status(200).json({
+        success: true,
+        message: 'Logout successful'
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error during logout'
+      });
+    }
+  };
+  
   module.exports = {
     registerUser,
     loginUser,
-    getUserProfile
+    getUserProfile,
+    logout
   };
